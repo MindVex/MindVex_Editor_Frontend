@@ -1,0 +1,255 @@
+/* Color Tokens Light Theme */
+:root,
+:root[data-theme='light'] {
+  --mindvex-elements-borderColor: theme('colors.alpha.gray.10');
+  --mindvex-elements-borderColorActive: theme('colors.orange.600');
+
+  --mindvex-elements-bg-depth-1: theme('colors.gray.50');
+  --mindvex-elements-bg-depth-2: theme('colors.gray.100');
+  --mindvex-elements-bg-depth-3: theme('colors.gray.200');
+  --mindvex-elements-bg-depth-4: theme('colors.alpha.gray.5');
+
+  --mindvex-elements-textPrimary: theme('colors.gray.950');
+  --mindvex-elements-textSecondary: theme('colors.gray.600');
+  --mindvex-elements-textTertiary: theme('colors.gray.500');
+
+  --mindvex-elements-code-background: theme('colors.gray.100');
+  --mindvex-elements-code-text: theme('colors.gray.950');
+
+  --mindvex-elements-button-primary-background: theme('colors.alpha.orange.10');
+  --mindvex-elements-button-primary-backgroundHover: theme('colors.alpha.orange.20');
+  --mindvex-elements-button-primary-text: theme('colors.orange.500');
+
+  --mindvex-elements-button-secondary-background: theme('colors.alpha.gray.5');
+  --mindvex-elements-button-secondary-backgroundHover: theme('colors.alpha.gray.10');
+  --mindvex-elements-button-secondary-text: theme('colors.gray.950');
+
+  --mindvex-elements-button-danger-background: theme('colors.alpha.red.10');
+  --mindvex-elements-button-danger-backgroundHover: theme('colors.alpha.red.20');
+  --mindvex-elements-button-danger-text: theme('colors.red.500');
+
+  --mindvex-elements-item-contentDefault: theme('colors.alpha.gray.50');
+  --mindvex-elements-item-contentActive: theme('colors.gray.950');
+  --mindvex-elements-item-contentAccent: theme('colors.orange.700');
+  --mindvex-elements-item-contentDanger: theme('colors.red.500');
+  --mindvex-elements-item-backgroundDefault: rgba(0, 0, 0, 0);
+  --mindvex-elements-item-backgroundActive: theme('colors.alpha.gray.5');
+  --mindvex-elements-item-backgroundAccent: theme('colors.alpha.orange.10');
+  --mindvex-elements-item-backgroundDanger: theme('colors.alpha.red.10');
+
+  --mindvex-elements-loader-background: theme('colors.alpha.gray.10');
+  --mindvex-elements-loader-progress: theme('colors.orange.500');
+
+  --mindvex-elements-artifacts-background: theme('colors.white');
+  --mindvex-elements-artifacts-backgroundHover: theme('colors.alpha.orange.2');
+  --mindvex-elements-artifacts-borderColor: var(--mindvex-elements-borderColor);
+  --mindvex-elements-artifacts-inlineCode-background: theme('colors.orange.100');
+  --mindvex-elements-artifacts-inlineCode-text: var(--mindvex-elements-textPrimary);
+
+  --mindvex-elements-actions-background: theme('colors.white');
+  --mindvex-elements-actions-code-background: theme('colors.gray.800');
+
+  --mindvex-elements-messages-background: theme('colors.gray.100');
+  --mindvex-elements-messages-linkColor: theme('colors.orange.500');
+  --mindvex-elements-messages-code-background: theme('colors.gray.800');
+  --mindvex-elements-messages-inlineCode-background: theme('colors.gray.200');
+  --mindvex-elements-messages-inlineCode-text: theme('colors.gray.800');
+
+  --mindvex-elements-icon-success: theme('colors.green.500');
+  --mindvex-elements-icon-error: theme('colors.red.500');
+  --mindvex-elements-icon-primary: theme('colors.gray.950');
+  --mindvex-elements-icon-secondary: theme('colors.gray.600');
+  --mindvex-elements-icon-tertiary: theme('colors.gray.500');
+
+  --mindvex-elements-dividerColor: theme('colors.orange.100');
+
+  --mindvex-elements-prompt-background: theme('colors.alpha.orange.80');
+
+  --mindvex-elements-sidebar-dropdownShadow: theme('colors.alpha.gray.10');
+  --mindvex-elements-sidebar-buttonBackgroundDefault: theme('colors.alpha.orange.10');
+  --mindvex-elements-sidebar-buttonBackgroundHover: theme('colors.alpha.orange.20');
+  --mindvex-elements-sidebar-buttonText: theme('colors.orange.700');
+
+  --mindvex-elements-preview-addressBar-background: theme('colors.gray.100');
+  --mindvex-elements-preview-addressBar-backgroundHover: theme('colors.alpha.gray.5');
+  --mindvex-elements-preview-addressBar-backgroundActive: theme('colors.gray.50');
+  --mindvex-elements-preview-addressBar-text: var(--mindvex-elements-textSecondary);
+  --mindvex-elements-preview-addressBar-textActive: var(--mindvex-elements-textPrimary);
+
+  --mindvex-elements-terminals-background: theme('colors.gray.50');
+  --mindvex-elements-terminals-buttonBackground: var(--mindvex-elements-bg-depth-4);
+
+  --mindvex-elements-cta-background: theme('colors.gray.100');
+  --mindvex-elements-cta-text: theme('colors.gray.950');
+
+  /* Terminal Colors */
+  --mindvex-terminal-background: var(--mindvex-elements-terminals-background);
+  --mindvex-terminal-foreground: #333333;
+  --mindvex-terminal-selection-background: #00000040;
+  --mindvex-terminal-black: #000000;
+  --mindvex-terminal-red: #cd3131;
+  --mindvex-terminal-green: #00bc00;
+  --mindvex-terminal-yellow: #949800;
+  --mindvex-terminal-blue: #0451a5;
+  --mindvex-terminal-magenta: #bc05bc;
+  --mindvex-terminal-cyan: #0598bc;
+  --mindvex-terminal-white: #555555;
+  --mindvex-terminal-brightBlack: #686868;
+  --mindvex-terminal-brightRed: #cd3131;
+  --mindvex-terminal-brightGreen: #00bc00;
+  --mindvex-terminal-brightYellow: #949800;
+  --mindvex-terminal-brightBlue: #0451a5;
+  --mindvex-terminal-brightMagenta: #bc05bc;
+  --mindvex-terminal-brightCyan: #0598bc;
+  --mindvex-terminal-brightWhite: #a5a5a5;
+  --modern-scrollbar-thumb-background: rgba(100, 100, 100, 0.3); // Example light theme color
+  --modern-scrollbar-thumb-backgroundHover: rgba(74, 74, 74, 0.8);
+}
+
+/* Color Tokens Dark Theme - Black Background with Orange Accents */
+:root[data-theme='dark'],
+[data-theme='dark'] {
+  --mindvex-elements-borderColor: theme('colors.alpha.gray.80');
+  --mindvex-elements-borderColorActive: theme('colors.orange.500');
+
+  --mindvex-elements-bg-depth-1: theme('colors.gray.950'); /* Black background */
+  --mindvex-elements-bg-depth-2: theme('colors.gray.900');
+  --mindvex-elements-bg-depth-3: theme('colors.gray.800');
+  --mindvex-elements-bg-depth-4: theme('colors.alpha.gray.5');
+
+  --mindvex-elements-textPrimary: theme('colors.white'); /* White text */
+  --mindvex-elements-textSecondary: theme('colors.gray.300');
+  --mindvex-elements-textTertiary: theme('colors.gray.400');
+
+  --mindvex-elements-code-background: theme('colors.gray.900');
+  --mindvex-elements-code-text: theme('colors.orange.400'); /* Orange code text for contrast */
+
+  --mindvex-elements-button-primary-background: theme('colors.alpha.orange.10');
+  --mindvex-elements-button-primary-backgroundHover: theme('colors.alpha.orange.20');
+  --mindvex-elements-button-primary-text: theme('colors.orange.500');
+
+  --mindvex-elements-button-secondary-background: theme('colors.alpha.white.5');
+  --mindvex-elements-button-secondary-backgroundHover: theme('colors.alpha.white.10');
+  --mindvex-elements-button-secondary-text: theme('colors.white');
+
+  --mindvex-elements-button-danger-background: theme('colors.alpha.red.10');
+  --mindvex-elements-button-danger-backgroundHover: theme('colors.alpha.red.20');
+  --mindvex-elements-button-danger-text: theme('colors.red.500');
+
+  --mindvex-elements-item-contentDefault: theme('colors.alpha.white.50');
+  --mindvex-elements-item-contentActive: theme('colors.white');
+  --mindvex-elements-item-contentAccent: theme('colors.orange.500');
+  --mindvex-elements-item-contentDanger: theme('colors.red.500');
+  --mindvex-elements-item-backgroundDefault: rgba(255, 255, 255, 0);
+  --mindvex-elements-item-backgroundActive: theme('colors.alpha.white.10');
+  --mindvex-elements-item-backgroundAccent: theme('colors.alpha.orange.10');
+  --mindvex-elements-item-backgroundDanger: theme('colors.alpha.red.10');
+
+  --mindvex-elements-loader-background: theme('colors.alpha.gray.10');
+  --mindvex-elements-loader-progress: theme('colors.orange.500');
+
+  --mindvex-elements-artifacts-background: theme('colors.gray.900');
+  --mindvex-elements-artifacts-backgroundHover: theme('colors.alpha.gray.80');
+  --mindvex-elements-artifacts-borderColor: var(--mindvex-elements-borderColor);
+  --mindvex-elements-artifacts-inlineCode-background: theme('colors.gray.800');
+  --mindvex-elements-artifacts-inlineCode-text: theme('colors.white');
+
+  --mindvex-elements-actions-background: theme('colors.gray.900');
+  --mindvex-elements-actions-code-background: theme('colors.gray.800');
+
+  --mindvex-elements-messages-background: theme('colors.gray.900');
+  --mindvex-elements-messages-linkColor: theme('colors.orange.500');
+  --mindvex-elements-messages-code-background: theme('colors.gray.900');
+  --mindvex-elements-messages-inlineCode-background: theme('colors.gray.700');
+  --mindvex-elements-messages-inlineCode-text: var(--mindvex-elements-textPrimary);
+
+  --mindvex-elements-icon-success: theme('colors.green.400');
+  --mindvex-elements-icon-error: theme('colors.red.400');
+  --mindvex-elements-icon-primary: theme('colors.white');
+  --mindvex-elements-icon-secondary: theme('colors.gray.400');
+  --mindvex-elements-icon-tertiary: theme('colors.gray.500');
+
+  --mindvex-elements-dividerColor: theme('colors.orange.100');
+
+  --mindvex-elements-prompt-background: theme('colors.alpha.orange.80');
+
+  --mindvex-elements-sidebar-dropdownShadow: theme('colors.alpha.gray.30');
+  --mindvex-elements-sidebar-buttonBackgroundDefault: theme('colors.alpha.orange.10');
+  --mindvex-elements-sidebar-buttonBackgroundHover: theme('colors.alpha.orange.20');
+  --mindvex-elements-sidebar-buttonText: theme('colors.orange.500');
+
+  --mindvex-elements-preview-addressBar-background: theme('colors.gray.900');
+  --mindvex-elements-preview-addressBar-backgroundHover: theme('colors.alpha.gray.80');
+  --mindvex-elements-preview-addressBar-backgroundActive: theme('colors.gray.800');
+  --mindvex-elements-preview-addressBar-text: var(--mindvex-elements-textSecondary);
+  --mindvex-elements-preview-addressBar-textActive: var(--mindvex-elements-textPrimary);
+
+  --mindvex-elements-terminals-background: theme('colors.black'); /* Black terminal background */
+  --mindvex-elements-terminals-buttonBackground: var(--mindvex-elements-bg-depth-3);
+
+  --mindvex-elements-cta-background: theme('colors.alpha.orange.20');
+  --mindvex-elements-cta-text: theme('colors.orange.400');
+
+  /* Terminal Colors */
+  --mindvex-terminal-background: var(--mindvex-elements-terminals-background);
+  --mindvex-terminal-foreground: #eff0eb;
+  --mindvex-terminal-selection-background: #97979b33;
+  --mindvex-terminal-black: #000000;
+  --mindvex-terminal-red: #ff5c57;
+  --mindvex-terminal-green: #5af78e;
+  --mindvex-terminal-yellow: #f3f99d;
+  --mindvex-terminal-blue: #57c7ff;
+  --mindvex-terminal-magenta: #ffbc6a;
+  --mindvex-terminal-cyan: #9aedfe;
+  --mindvex-terminal-white: #f1f1f0;
+  --mindvex-terminal-brightBlack: #686868;
+  --mindvex-terminal-brightRed: #ff5c57;
+  --mindvex-terminal-brightGreen: #5af78e;
+  --mindvex-terminal-brightYellow: #f3f99d;
+  --mindvex-terminal-brightBlue: #57c7ff;
+  --mindvex-terminal-brightMagenta: #ffbe6a;
+  --mindvex-terminal-brightCyan: #9aedfe;
+  --mindvex-terminal-brightWhite: #f1f1f0;
+  --modern-scrollbar-thumb-background: rgba(100, 100, 100, 0.3); // Example dark theme color (adjust as needed)
+  --modern-scrollbar-thumb-backgroundHover: rgba(10, 10, 10, 0.8);
+}
+
+/*
+ * Element Tokens
+ *
+ * Hierarchy: Element Token -> (Element Token | Color Tokens) -> Primitives
+ */
+:root {
+  --header-height: 54px;
+  --chat-max-width: 33rem;
+  --chat-min-width: 533px;
+  --workbench-width: min(calc(100% - var(--chat-min-width)), 2536px);
+  --workbench-inner-width: var(--workbench-width);
+  --workbench-left: calc(100% - var(--workbench-width));
+
+  /* Toasts */
+  --toastify-color-progress-success: var(--mindvex-elements-icon-success);
+  --toastify-color-progress-error: var(--mindvex-elements-icon-error);
+
+  /* Terminal */
+  --mindvex-elements-terminal-backgroundColor: var(--mindvex-terminal-background);
+  --mindvex-elements-terminal-textColor: var(--mindvex-terminal-foreground);
+  --mindvex-elements-terminal-cursorColor: var(--mindvex-terminal-foreground);
+  --mindvex-elements-terminal-selection-backgroundColor: var(--mindvex-terminal-selection-background);
+  --mindvex-elements-terminal-color-black: var(--mindvex-terminal-black);
+  --mindvex-elements-terminal-color-red: var(--mindvex-terminal-red);
+  --mindvex-elements-terminal-color-green: var(--mindvex-terminal-green);
+  --mindvex-elements-terminal-color-yellow: var(--mindvex-terminal-yellow);
+  --mindvex-elements-terminal-color-blue: var(--mindvex-terminal-blue);
+  --mindvex-elements-terminal-color-magenta: var(--mindvex-terminal-magenta);
+  --mindvex-elements-terminal-color-cyan: var(--mindvex-terminal-cyan);
+  --mindvex-elements-terminal-color-white: var(--mindvex-terminal-white);
+  --mindvex-elements-terminal-color-brightBlack: var(--mindvex-terminal-brightBlack);
+  --mindvex-elements-terminal-color-brightRed: var(--mindvex-terminal-brightRed);
+  --mindvex-elements-terminal-color-brightGreen: var(--mindvex-terminal-brightGreen);
+  --mindvex-elements-terminal-color-brightYellow: var(--mindvex-terminal-brightYellow);
+  --mindvex-elements-terminal-color-brightBlue: var(--mindvex-terminal-brightBlue);
+  --mindvex-elements-terminal-color-brightMagenta: var(--mindvex-terminal-brightMagenta);
+  --mindvex-elements-terminal-color-brightCyan: var(--mindvex-terminal-brightCyan);
+  --mindvex-elements-terminal-color-brightWhite: var(--mindvex-terminal-brightWhite);
+}
