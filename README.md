@@ -70,10 +70,19 @@ MindVex is built with modern web technologies:
 
 MindVex runs entirely in the browser and requires no installation. Simply navigate to the application URL in a modern web browser. For local development:
 
+### Using npm (may have dependency conflicts):
 1. Clone the repository: `git clone <repository-url>`
-2. Install dependencies: `npm install`
+2. Install dependencies: `npm install --legacy-peer-deps` (due to dependency conflicts)
 3. Start the development server: `npm run dev`
 4. Open your browser to the provided local URL
+
+### Recommended: Using pnpm (resolves dependency conflicts):
+1. Clone the repository: `git clone <repository-url>`
+2. Install dependencies: `pnpm install`
+3. Start the development server: `pnpm run dev`
+4. Open your browser to the provided local URL
+
+Using pnpm is recommended as it resolves dependency conflicts that may occur with npm.
 
 ## 🚀 Getting Started
 
