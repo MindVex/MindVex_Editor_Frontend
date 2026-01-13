@@ -2,7 +2,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { motion } from 'framer-motion';
 import { useStore } from '@nanostores/react';
 import { classNames } from '~/utils/classNames';
-import { authStore } from '~/lib/stores/authStore';
+import { authStore, clearAuth } from '~/lib/stores/authStore';
 import type { TabType } from './types';
 
 interface AvatarDropdownProps {
@@ -161,10 +161,8 @@ export const AvatarDropdown = ({ onSelectTab }: AvatarDropdownProps) => {
               'group',
             )}
             onClick={() => {
-              import('~/lib/stores/authStore').then(({ clearAuth }) => {
-                clearAuth();
-                window.location.href = '/';
-              });
+              clearAuth();
+              window.location.href = '/';
             }}
           >
             <div className="i-ph:sign-out w-4 h-4" />

@@ -12,7 +12,7 @@ import { binDates } from './date-binning';
 import { useSearchFilter } from '~/lib/hooks/useSearchFilter';
 import { classNames } from '~/utils/classNames';
 import { useStore } from '@nanostores/react';
-import { authStore } from '~/lib/stores/authStore';
+import { authStore, clearAuth } from '~/lib/stores/authStore';
 import { RepositoryHistory } from './RepositoryHistory';
 import { ChatHistory } from './ChatHistory';
 import { repositoryHistoryStore } from '~/lib/stores/repositoryHistory';
@@ -710,13 +710,9 @@ export const Menu = () => {
               {auth.isAuthenticated && (
                 <button
                   onClick={() => {
-                    // Clear auth state
-                    import('~/lib/stores/authStore').then(({ clearAuth }) => {
-                      clearAuth();
-                      toast.success('Logged out successfully');
-                      // Navigate to home page which will show auth modal
-                      window.location.href = '/';
-                    });
+                    clearAuth();
+                    toast.success('Logged out successfully');
+                    window.location.href = '/';
                   }}
                   className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-mindvex-elements-item-backgroundActive hover:bg-mindvex-elements-item-backgroundHover text-mindvex-elements-textSecondary hover:text-mindvex-elements-textPrimary transition-colors"
                   title="Logout"
