@@ -17,6 +17,7 @@ export const importFolderToWorkbench = async (files: File[], addToExisting = fal
   const filteredFiles = allFiles.filter((file) => {
     const path = file.webkitRelativePath.split('/').slice(1).join('/');
     console.log('Workbench import filtering file path:', path);
+
     const include = shouldIncludeFile(path);
 
     return include;
@@ -87,18 +88,28 @@ export const importFolderToWorkbench = async (files: File[], addToExisting = fal
     // Import text files into workbench
     for (const file of textFiles) {
       const relativePath = file.webkitRelativePath.split('/').slice(1).join('/');
+
       // Construct the full path using WORK_DIR and relative path
       let fullFilePath: string = `${WORK_DIR}/${relativePath}`.replace(/\/\/+/g, '/');
 
       // Normalize the path to remove any relative path components like ./ or ../
       fullFilePath = path.normalize(fullFilePath);
+
       const content = await file.text();
 
-      console.log('Processing workbench import file:', file.name, 'Relative path:', relativePath, 'Full path:', fullFilePath);
+      console.log(
+        'Processing workbench import file:',
+        file.name,
+        'Relative path:',
+        relativePath,
+        'Full path:',
+        fullFilePath,
+      );
 
       // Create the file in the workbench
       try {
         console.log('About to create file with path:', fullFilePath);
+
         const result = await workbenchStore.createFile(fullFilePath, content);
         console.log('File creation result:', result, 'for path:', fullFilePath);
       } catch (error) {
@@ -111,17 +122,17 @@ export const importFolderToWorkbench = async (files: File[], addToExisting = fal
       // Store file data for potential later retrieval
       filesData.push({
         path: relativePath,
-        content: content
+        content
       });
     }
 
     // Update editor documents to reflect all newly created files
     const allFiles = workbenchStore.files.get();
-    workbenchStore.setDocuments(allFiles, true) // autoSelectFirstFile = true
+    workbenchStore.setDocuments(allFiles, true); // autoSelectFirstFile = true
 
     // Explicitly select the first file if available
     if (Object.keys(allFiles).length > 0) {
-      const firstFilePath = Object.keys(allFiles).find(path => allFiles[path]?.type === 'file');
+      const firstFilePath = Object.keys(allFiles).find((path) => allFiles[path]?.type === 'file');
       if (firstFilePath) {
         workbenchStore.setSelectedFile(firstFilePath);
       }
@@ -133,13 +144,14 @@ export const importFolderToWorkbench = async (files: File[], addToExisting = fal
       const folderData = {
         name: folderName,
         files: filesData,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
       localStorage.setItem(folderStorageKey, JSON.stringify(folderData));
     }
 
     // Create workspace in backend if user is authenticated
     const currentUser = getCurrentUser();
+
     if (currentUser && !addToExisting) {
       try {
         const workspace = await createWorkspace(
@@ -154,6 +166,7 @@ export const importFolderToWorkbench = async (files: File[], addToExisting = fal
         });
       } catch (error) {
         logStore.logError('Failed to create workspace for imported folder', error, { folderName });
+
         // Don't fail the import if workspace creation fails
         console.error('Workspace creation failed, but folder import succeeded:', error);
       }
@@ -204,8 +217,10 @@ export const loadStoredGitRepoToWorkbench = async (repoName: string, addToExisti
 
       // Normalize the path to remove any relative path components like ./ or ../
       fullFilePath = path.normalize(fullFilePath);
+
       try {
         console.log('About to create stored file with path:', fullFilePath);
+
         const result = await workbenchStore.createFile(fullFilePath, fileData.content);
         console.log('Stored file creation result:', result, 'for path:', fullFilePath);
       } catch (error) {
@@ -218,11 +233,11 @@ export const loadStoredGitRepoToWorkbench = async (repoName: string, addToExisti
 
     // Update editor documents to reflect all newly created files
     const allFiles = workbenchStore.files.get();
-    workbenchStore.setDocuments(allFiles, true) // autoSelectFirstFile = true
+    workbenchStore.setDocuments(allFiles, true); // autoSelectFirstFile = true
 
     // Explicitly select the first file if available
     if (Object.keys(allFiles).length > 0) {
-      const firstFilePath = Object.keys(allFiles).find(path => allFiles[path]?.type === 'file');
+      const firstFilePath = Object.keys(allFiles).find((path) => allFiles[path]?.type === 'file');
       if (firstFilePath) {
         workbenchStore.setSelectedFile(firstFilePath);
       }
@@ -231,7 +246,7 @@ export const loadStoredGitRepoToWorkbench = async (repoName: string, addToExisti
     logStore.logSystem('Stored repository loaded to workbench successfully', {
       repoName,
       fileCount: repoData.files.length,
-      timestamp: repoData.timestamp
+      timestamp: repoData.timestamp,
     });
 
     toast.success(`${repoData.files.length} files loaded from stored repository '${repoName}'`);
@@ -244,6 +259,7 @@ export const loadStoredGitRepoToWorkbench = async (repoName: string, addToExisti
     logStore.logError('Failed to load stored repository from localStorage', error, { repoName });
     console.error('Failed to load stored repository:', error);
     toast.error('Failed to load stored repository');
+
     return false;
   }
 };
@@ -274,8 +290,10 @@ export const loadStoredFolderToWorkbench = async (folderName: string, addToExist
 
       // Normalize the path to remove any relative path components like ./ or ../
       fullFilePath = path.normalize(fullFilePath);
+
       try {
         console.log('About to create stored file with path:', fullFilePath);
+
         const result = await workbenchStore.createFile(fullFilePath, fileData.content);
         console.log('Stored file creation result:', result, 'for path:', fullFilePath);
       } catch (error) {
@@ -292,7 +310,7 @@ export const loadStoredFolderToWorkbench = async (folderName: string, addToExist
 
     // Explicitly select the first file if available
     if (Object.keys(allFiles).length > 0) {
-      const firstFilePath = Object.keys(allFiles).find(path => allFiles[path]?.type === 'file');
+      const firstFilePath = Object.keys(allFiles).find((path) => allFiles[path]?.type === 'file');
       if (firstFilePath) {
         workbenchStore.setSelectedFile(firstFilePath);
       }
@@ -301,7 +319,7 @@ export const loadStoredFolderToWorkbench = async (folderName: string, addToExist
     logStore.logSystem('Stored folder loaded to workbench successfully', {
       folderName,
       fileCount: folderData.files.length,
-      timestamp: folderData.timestamp
+      timestamp: folderData.timestamp,
     });
 
     toast.success(`${folderData.files.length} files loaded from stored folder '${folderName}'`);
@@ -319,10 +337,11 @@ export const loadStoredFolderToWorkbench = async (folderName: string, addToExist
 
     // Try to list all stored keys to debug
     const allKeys = Object.keys(localStorage);
-    const folderKeys = allKeys.filter(key => key.startsWith('folder_'));
+    const folderKeys = allKeys.filter((key) => key.startsWith('folder_'));
     console.log('Available stored folders:', folderKeys);
 
     toast.error(`Failed to load stored folder: ${(error as Error).message}`);
+
     return false;
   }
 };
@@ -353,15 +372,20 @@ export const importGitRepoToWorkbench = async (repoUrl: string, gitClone: any, a
     // Import files to workbench
     for (const [filePath, fileData] of Object.entries(data)) {
       const typedFileData = fileData as GitFileData;
+
       if (typedFileData.type === 'file' && typedFileData.encoding === 'utf8' && typedFileData.content) {
-        // Create the file in the workbench
-        // Construct the full path using WORK_DIR and relative path
+        /*
+         * Create the file in the workbench
+         * Construct the full path using WORK_DIR and relative path
+         */
         let fullFilePath: string = `${WORK_DIR}/${filePath}`.replace(/\/\/+/g, '/');
 
         // Normalize the path to remove any relative path components like ./ or ../
         fullFilePath = path.normalize(fullFilePath);
+
         try {
           console.log('About to create git file with path:', fullFilePath);
+
           const result = await workbenchStore.createFile(fullFilePath, typedFileData.content);
           console.log('Git file creation result:', result, 'for path:', fullFilePath);
         } catch (error) {
@@ -374,18 +398,18 @@ export const importGitRepoToWorkbench = async (repoUrl: string, gitClone: any, a
         // Store file data for potential later retrieval
         filesData.push({
           path: filePath,
-          content: typedFileData.content
+          content: typedFileData.content,
         });
       }
     }
 
     // Update editor documents to reflect all newly created files
     const allFiles = workbenchStore.files.get();
-    workbenchStore.setDocuments(allFiles, true) // autoSelectFirstFile = true
+    workbenchStore.setDocuments(allFiles, true); // autoSelectFirstFile = true
 
     // Explicitly select the first file if available
     if (Object.keys(allFiles).length > 0) {
-      const firstFilePath = Object.keys(allFiles).find(path => allFiles[path]?.type === 'file');
+      const firstFilePath = Object.keys(allFiles).find((path) => allFiles[path]?.type === 'file');
       if (firstFilePath) {
         workbenchStore.setSelectedFile(firstFilePath);
       }
@@ -394,13 +418,17 @@ export const importGitRepoToWorkbench = async (repoUrl: string, gitClone: any, a
     // Store the repository data in localStorage for later retrieval
     if (filesData.length > 0) {
       // Extract repo name from URL for storage key
-      const repoName = repoUrl.split('/').pop()?.replace(/\.git$/, '') || 'unknown';
+      const repoName =
+        repoUrl
+          .split('/')
+          .pop()
+          ?.replace(/\.git$/, '') || 'unknown';
       const repoStorageKey = `repo_${repoName}`;
       const repoData = {
         name: repoName,
         url: repoUrl,
         files: filesData,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
       localStorage.setItem(repoStorageKey, JSON.stringify(repoData));
     }

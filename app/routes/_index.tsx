@@ -88,8 +88,12 @@ export default function Index() {
                   <ProjectAwareLayout>
                     <div className="flex flex-col items-center justify-center h-full p-6">
                       <div className="max-w-2xl w-full text-center">
-                        <h1 className="text-4xl font-bold text-mindvex-elements-textPrimary mb-2">Welcome to MindVex</h1>
-                        <p className="text-lg text-mindvex-elements-textSecondary mb-8">Your comprehensive development platform</p>
+                        <h1 className="text-4xl font-bold text-mindvex-elements-textPrimary mb-2">
+                          Welcome to MindVex
+                        </h1>
+                        <p className="text-lg text-mindvex-elements-textSecondary mb-8">
+                          Your comprehensive development platform
+                        </p>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                           <div
@@ -97,22 +101,29 @@ export default function Index() {
                             className="bg-mindvex-elements-background-depth-2 hover:bg-mindvex-elements-background-depth-3 p-6 rounded-lg border border-mindvex-elements-borderColor transition-theme cursor-pointer"
                           >
                             <div className="text-2xl mb-2">💬</div>
-                            <h3 className="text-xl font-semibold text-mindvex-elements-textPrimary mb-2">Chat with Your Code</h3>
-                            <p className="text-mindvex-elements-textSecondary">Discuss, analyze, and get help with your codebase</p>
+                            <h3 className="text-xl font-semibold text-mindvex-elements-textPrimary mb-2">
+                              Chat with Your Code
+                            </h3>
+                            <p className="text-mindvex-elements-textSecondary">
+                              Discuss, analyze, and get help with your codebase
+                            </p>
                           </div>
                           <div className="bg-mindvex-elements-background-depth-2 hover:bg-mindvex-elements-background-depth-3 p-6 rounded-lg border border-mindvex-elements-borderColor transition-theme">
                             <div className="text-2xl mb-2">📁</div>
-                            <h3 className="text-xl font-semibold text-mindvex-elements-textPrimary mb-2">Import Folder</h3>
+                            <h3 className="text-xl font-semibold text-mindvex-elements-textPrimary mb-2">
+                              Import Folder
+                            </h3>
                             <p className="text-mindvex-elements-textSecondary mb-4">Import a folder to work with</p>
                             <DirectImportFolderButton />
                           </div>
                           <div className="bg-mindvex-elements-background-depth-2 hover:bg-mindvex-elements-background-depth-3 p-6 rounded-lg border border-mindvex-elements-borderColor transition-theme">
                             <div className="text-2xl mb-2">🐙</div>
-                            <h3 className="text-xl font-semibold text-mindvex-elements-textPrimary mb-2">Clone Repository</h3>
+                            <h3 className="text-xl font-semibold text-mindvex-elements-textPrimary mb-2">
+                              Clone Repository
+                            </h3>
                             <p className="text-mindvex-elements-textSecondary mb-4">Clone a repo from GitHub</p>
                             <DirectGitCloneButton />
                           </div>
-
                         </div>
 
                         <div className="flex flex-col items-center gap-4 max-w-2xl text-center mb-8">
@@ -121,7 +132,10 @@ export default function Index() {
                           </div>
                         </div>
 
-                        <Link to="/editor" className="inline-block bg-mindvex-elements-background-depth-2 hover:bg-mindvex-elements-background-depth-3 px-6 py-3 rounded-lg border border-mindvex-elements-borderColor transition-theme">
+                        <Link
+                          to="/editor"
+                          className="inline-block bg-mindvex-elements-background-depth-2 hover:bg-mindvex-elements-background-depth-3 px-6 py-3 rounded-lg border border-mindvex-elements-borderColor transition-theme"
+                        >
                           <div className="text-xl mb-1">💻</div>
                           <h3 className="text-lg font-semibold text-mindvex-elements-textPrimary">Open Code Editor</h3>
                         </Link>
@@ -136,9 +150,7 @@ export default function Index() {
       </div>
 
       {/* Auth Modal */}
-      {showAuthModal && !auth.isAuthenticated && (
-        <AuthModal onClose={() => setShowAuthModal(false)} />
-      )}
+      {showAuthModal && !auth.isAuthenticated && <AuthModal onClose={() => setShowAuthModal(false)} />}
     </div>
   );
 }
