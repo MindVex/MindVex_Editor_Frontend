@@ -54,7 +54,8 @@ export default defineConfig((config) => {
           return null;
         },
       },
-      config.mode !== 'test' && config.mode !== 'production' && remixCloudflareDevProxy(),
+      // Only load Cloudflare dev proxy in development
+      ...(config.mode === 'production' || config.mode === 'test' ? [] : [remixCloudflareDevProxy()]),
       remixVitePlugin({
         future: {
           v3_fetcherPersist: true,
@@ -67,7 +68,7 @@ export default defineConfig((config) => {
       tsconfigPaths(),
       chrome129IssuePlugin(),
       config.mode === 'production' && optimizeCssModules({ apply: 'build' }),
-    ],
+    ].filter(Boolean),
     envPrefix: [
       'VITE_',
       'OPENAI_LIKE_API_BASE_URL',
