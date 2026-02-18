@@ -13,7 +13,11 @@
  *   const tree = await parse(code, 'java');      // subsequent calls are fast
  */
 
-import Parser from 'web-tree-sitter';
+// web-tree-sitter ships a UMD/CJS build. We use a dynamic require() cast so
+// TypeScript sees the correct static types while still being able to call
+// Parser.init() and `new Parser()` at runtime.
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+const ParserModule: any = require('web-tree-sitter');
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -32,8 +36,10 @@ const GRAMMAR_URLS: Record<SupportedLanguage, string> = {
 let parserReady = false;
 let initPromise: Promise<void> | null = null;
 
-const languageCache = new Map<SupportedLanguage, Parser.Language>();
-const parserInstances = new Map<SupportedLanguage, Parser>();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const languageCache = new Map<SupportedLanguage, any>();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const parserInstances = new Map<SupportedLanguage, any>();
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
@@ -46,9 +52,8 @@ export async function initParser(): Promise<void> {
     if (initPromise) return initPromise;
 
     initPromise = (async () => {
-        await Parser.init({
+        await ParserModule.init({
             locateFile(scriptName: string) {
-                // Point tree-sitter to the WASM binary served from public/
                 if (scriptName === 'tree-sitter.wasm') {
                     return '/tree-sitter.wasm';
                 }
@@ -63,34 +68,28 @@ export async function initParser(): Promise<void> {
 
 // ─── Language Loading ─────────────────────────────────────────────────────────
 
-/**
- * Load a language grammar on demand and cache it.
- */
-async function loadLanguage(lang: SupportedLanguage): Promise<Parser.Language> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function loadLanguage(lang: SupportedLanguage): Promise<any> {
     if (languageCache.has(lang)) {
         return languageCache.get(lang)!;
     }
 
     const url = GRAMMAR_URLS[lang];
-    if (!url) {
-        throw new Error(`Unsupported language: ${lang}`);
-    }
+    if (!url) throw new Error(`Unsupported language: ${lang}`);
 
-    const language = await Parser.Language.load(url);
+    const language = await ParserModule.Language.load(url);
     languageCache.set(lang, language);
     return language;
 }
 
-/**
- * Get (or create) a Parser instance for a given language.
- */
-async function getParser(lang: SupportedLanguage): Promise<Parser> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function getParser(lang: SupportedLanguage): Promise<any> {
     if (parserInstances.has(lang)) {
         return parserInstances.get(lang)!;
     }
 
     const language = await loadLanguage(lang);
-    const parser = new Parser();
+    const parser = new ParserModule();
     parser.setLanguage(language);
     parserInstances.set(lang, parser);
     return parser;
@@ -100,22 +99,15 @@ async function getParser(lang: SupportedLanguage): Promise<Parser> {
 
 /**
  * Parse source code and return the Tree-sitter syntax tree.
- *
- * @param code     - Source code string to parse
- * @param language - One of: 'java' | 'python' | 'typescript' | 'javascript'
- * @returns        A Tree-sitter Tree object (rootNode, walk(), etc.)
  */
-export async function parse(code: string, language: SupportedLanguage): Promise<Parser.Tree> {
-    if (!parserReady) {
-        await initParser();
-    }
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function parse(code: string, language: SupportedLanguage): Promise<any> {
+    if (!parserReady) await initParser();
 
     const parser = await getParser(language);
     const tree = parser.parse(code);
 
-    if (!tree) {
-        throw new Error(`Failed to parse code for language: ${language}`);
-    }
+    if (!tree) throw new Error(`Failed to parse code for language: ${language}`);
 
     return tree;
 }
@@ -126,20 +118,14 @@ export async function parse(code: string, language: SupportedLanguage): Promise<
  */
 export function detectLanguage(filePath: string): SupportedLanguage | null {
     const ext = filePath.split('.').pop()?.toLowerCase();
-
     switch (ext) {
-        case 'java':
-            return 'java';
-        case 'py':
-            return 'python';
+        case 'java': return 'java';
+        case 'py': return 'python';
         case 'ts':
-        case 'tsx':
-            return 'typescript';
+        case 'tsx': return 'typescript';
         case 'js':
-        case 'jsx':
-            return 'javascript';
-        default:
-            return null;
+        case 'jsx': return 'javascript';
+        default: return null;
     }
 }
 
@@ -147,10 +133,8 @@ export function detectLanguage(filePath: string): SupportedLanguage | null {
  * Parse a file by auto-detecting its language from the file path.
  * Returns null if the language is not supported.
  */
-export async function parseFile(
-    code: string,
-    filePath: string,
-): Promise<Parser.Tree | null> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function parseFile(code: string, filePath: string): Promise<any | null> {
     const lang = detectLanguage(filePath);
     if (!lang) return null;
     return parse(code, lang);
