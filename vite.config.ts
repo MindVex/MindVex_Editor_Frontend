@@ -90,7 +90,16 @@ export default defineConfig((config) => {
       },
     },
     test: {
-      include: ['app/**/*.spec.ts', 'tests/unit/**/*.spec.ts'],
+      include: [
+        'app/**/*.spec.ts',
+        'app/**/*.test.ts',
+        'app/**/*.test.tsx',
+        'tests/unit/**/*.spec.ts',
+        'tests/unit/**/*.test.ts',
+        'tests/unit/**/*.test.tsx',
+        'tests/integration/**/*.test.ts',
+        'tests/integration/**/*.test.tsx',
+      ],
       exclude: [
         '**/node_modules/**',
         '**/dist/**',
