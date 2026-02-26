@@ -14,6 +14,10 @@ export const meta: MetaFunction = () => {
 
 export const loader = () => json({});
 
+import { useStore } from '@nanostores/react';
+import { authStore } from '~/lib/stores/authStore';
+import { LoginModal } from '~/components/auth/LoginModal';
+
 /**
  * Landing page component for MindVex
  * Note: Settings functionality should ONLY be accessed through the sidebar menu.
@@ -21,6 +25,8 @@ export const loader = () => json({});
  * to keep the UI clean and consistent with the design system.
  */
 export default function Index() {
+  const auth = useStore(authStore);
+
   return (
     <div className="flex flex-col h-full w-full bg-mindvex-elements-background-depth-1">
       <BackgroundRays />
@@ -39,12 +45,22 @@ export default function Index() {
               return unsubscribe;
             }, []);
 
+            // Reset workbench visibility when arriving at the home page so
+            // navigating back from /editor never leaves an empty tab bar
+            // visible over the MindVex header.
+            React.useEffect(() => {
+              workbenchStore.showWorkbench.set(false);
+            }, []);
+
             return (
               <div className="flex-1 relative min-h-0">
                 {!showWorkbench && <HomeContent />}
 
                 {/* Workbench — fills entire area when shown */}
                 <Workbench chatStarted={true} isStreaming={false} />
+
+                {/* Login Modal */}
+                {!auth.isLoading && <LoginModal isOpen={!auth.isAuthenticated} />}
               </div>
             );
           }}
