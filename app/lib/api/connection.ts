@@ -17,9 +17,10 @@ export const checkConnection = async (): Promise<ConnectionStatus> => {
       };
     }
 
-    // Try multiple endpoints in case one fails
+    // Try the backend health endpoint first, then fallback to frontend routes
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080/api';
     const endpoints = [
-      '/api/health',
+      `${BACKEND_URL}/health`,
       '/', // Fallback to root route
       '/favicon.ico', // Another common fallback
     ];
@@ -31,7 +32,7 @@ export const checkConnection = async (): Promise<ConnectionStatus> => {
       try {
         const start = performance.now();
         const response = await fetch(endpoint, {
-          method: 'HEAD',
+          method: 'GET',
           cache: 'no-cache',
         });
         const end = performance.now();
