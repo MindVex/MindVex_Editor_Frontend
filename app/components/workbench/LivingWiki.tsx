@@ -440,29 +440,64 @@ function SnapshotDashboard({ content }: { content: string }) {
 function HeartPulse(props: any) { return <Activity {...props} />; }
 
 function TreeVisualizer({ content }: { content: string }) {
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({ 'root': true });
-  let data: TreeNode = { name: 'root', children: [] };
-  try { data = JSON.parse(content); } catch { /* raw */ }
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  let data: TreeNode | null = null;
+  
+  try {
+    data = JSON.parse(content);
+  } catch (e) {
+    console.error('[TreeVisualizer] Failed to parse tree.json:', e);
+  }
 
   const toggle = (id: string) => setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
 
-  const Item = ({ node, depth, p }: { node: TreeNode; depth: number; p: string }) => {
-    const id = `${p}/${node.name}`;
-    const isDir = !!node.children;
-    const isExp = expanded[id];
+  const Item = ({ node, depth, path }: { node: TreeNode; depth: number; path: string }) => {
+    const id = path || node.name;
+    const isDir = !!node.children && node.children.length > 0;
+    const isExp = expanded[id] ?? (depth === 0); // Root expanded by default
+    
     return (
-      <div className="ml-4">
-        <div onClick={() => isDir && toggle(id)} className={`flex items-center gap-2 py-1 px-2 rounded-lg cursor-pointer hover:bg-white/5 transition-colors ${isDir ? 'text-gray-300' : 'text-gray-500'}`}>
-          {isDir ? (isExp ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />) : <div className="w-3" />}
-          {isDir ? <Package className="h-3 w-3 text-emerald-400 opacity-60" /> : <FileText className="h-3 w-3 opacity-40" />}
+      <div className={depth > 0 ? "ml-4" : ""}>
+        <div 
+          onClick={() => isDir && toggle(id)} 
+          className={`flex items-center gap-2 py-1 px-2 rounded-lg transition-colors ${
+            isDir ? 'cursor-pointer hover:bg-white/5 text-gray-300' : 'text-gray-500'
+          }`}
+        >
+          {isDir ? (
+            isExp ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />
+          ) : (
+            <div className="w-3" />
+          )}
+          {isDir ? (
+            <Package className="h-3 w-3 text-emerald-400 opacity-60" />
+          ) : (
+            <FileText className="h-3 w-3 opacity-40" />
+          )}
           <span className="text-[11px] font-mono">{node.name}</span>
         </div>
-        {isDir && isExp && node.children?.map((c, i) => <Item key={i} node={c} depth={depth + 1} p={id} />)}
+        {isDir && isExp && node.children?.map((child, idx) => {
+          const childPath = path ? `${path}/${child.name}` : child.name;
+          return <Item key={idx} node={child} depth={depth + 1} path={childPath} />;
+        })}
       </div>
     );
   };
 
-  return <div className="p-4 rounded-2xl bg-[#0a0a0a] border border-white/5"><Item node={data} depth={0} p="" /></div>;
+  if (!data || !data.name) {
+    return (
+      <div className="p-8 rounded-2xl bg-[#0a0a0a] border border-white/5 flex flex-col items-center justify-center gap-3 text-gray-600">
+        <GitBranch className="h-8 w-8 opacity-20" />
+        <p className="text-xs">No tree structure available</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-4 rounded-2xl bg-[#0a0a0a] border border-white/5 overflow-auto max-h-[600px]">
+      <Item node={data} depth={0} path="" />
+    </div>
+  );
 }
 
 function ArchitectureVisualizer({ content }: { content: string }) {
