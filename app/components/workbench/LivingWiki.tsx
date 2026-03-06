@@ -595,30 +595,31 @@ function ApiExplorer({ content }: { content: string }) {
 function SnapshotDashboard({ content }: { content: string }) {
   let data: any = {};
   try {
-    data = JSON.parse(content);
-  } catch {
-    /* raw */
+    data = JSON.parse(content) || {};
+  } catch (e) {
+    console.error('[SnapshotDashboard] Failed to parse snapshot JSON:', e);
+    data = {};
   }
   const stats = [
     {
       label: 'Total Files',
-      val: data.totalFiles || '--',
+      val: data?.totalFiles || '--',
       icon: <FileText className="h-4 w-4" />,
       color: 'text-blue-400',
     },
     {
       label: 'Modules',
-      val: data.modules?.length || '--',
+      val: Array.isArray(data?.modules) ? data.modules.length : '--',
       icon: <Package className="h-4 w-4" />,
       color: 'text-emerald-400',
     },
     {
       label: 'Coverage',
-      val: `${((data.coverage || 0) * 100).toFixed(0)}%`,
+      val: `${((data?.coverage || 0) * 100).toFixed(0)}%`,
       icon: <Activity className="h-4 w-4" />,
       color: 'text-purple-400',
     },
-    { label: 'Health', val: data.health || 'Unknown', icon: <HeartPulse className="h-4 w-4" />, color: 'text-red-400' },
+    { label: 'Health', val: data?.health || 'Unknown', icon: <HeartPulse className="h-4 w-4" />, color: 'text-red-400' },
   ];
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -705,12 +706,25 @@ function TreeVisualizer({ content }: { content: string }) {
 }
 
 function ArchitectureVisualizer({ content }: { content: string }) {
-  let data: any = { nodes: [], edges: [] };
+  let data: { nodes: any[]; links: any[] } = { nodes: [], links: [] };
   try {
     const raw = JSON.parse(content);
-    data = raw.nodes ? raw : raw.graph || { nodes: [], edges: [] };
-  } catch {
-    /* ignore */
+    // Handle different possible formats
+    if (raw.graph) {
+      // Format: { graph: { nodes: [], edges/links: [] } }
+      data.nodes = Array.isArray(raw.graph.nodes) ? raw.graph.nodes : [];
+      data.links = Array.isArray(raw.graph.links)
+        ? raw.graph.links
+        : Array.isArray(raw.graph.edges)
+          ? raw.graph.edges
+          : [];
+    } else if (raw.nodes) {
+      // Format: { nodes: [], edges/links: [] }
+      data.nodes = Array.isArray(raw.nodes) ? raw.nodes : [];
+      data.links = Array.isArray(raw.links) ? raw.links : Array.isArray(raw.edges) ? raw.edges : [];
+    }
+  } catch (e) {
+    console.error('[ArchitectureVisualizer] Failed to parse JSON:', e);
   }
 
   const fgRef = useRef<any>();
