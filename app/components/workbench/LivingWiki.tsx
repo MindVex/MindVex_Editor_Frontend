@@ -876,8 +876,35 @@ function ArchitectureVisualizer({ content }: { content: string }) {
     }
   }, [data]);
 
+  // To make the canvas responsive, we track the container dimensions
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [dimensions, setDimensions] = useState({ width: 800, height: 500 });
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    // Initial size
+    const { clientWidth, clientHeight } = containerRef.current;
+    if (clientWidth && clientHeight) setDimensions({ width: clientWidth, height: clientHeight });
+
+    // Resize observer for dynamic adjustments
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.contentBoxSize) {
+          setDimensions({
+            width: entry.contentRect.width,
+            height: entry.contentRect.height
+          });
+        }
+      }
+    });
+
+    resizeObserver.observe(containerRef.current);
+    return () => resizeObserver.disconnect();
+  }, []);
+
   return (
-    <div className="h-[500px] w-full bg-[#080808] rounded-2xl border border-white/5 overflow-hidden relative group">
+    <div ref={containerRef} className="h-full min-h-[500px] w-full bg-[#080808] rounded-2xl border border-white/5 overflow-hidden relative group">
       <div className="absolute top-4 left-4 z-10 flex flex-col gap-1 pointer-events-none">
         <h3 className="text-xs font-bold text-white flex items-center gap-2">
           <Share2 className="h-3 w-3 text-emerald-400" />
@@ -1009,12 +1036,12 @@ function ArchitectureVisualizer({ content }: { content: string }) {
             ctx.restore();
           }}
           backgroundColor="#080808"
-          width={800}
-          height={500}
+          width={dimensions.width}
+          height={dimensions.height}
           d3VelocityDecay={0.2} // More dynamic bounce settling
         />
       ) : (
-        <div className="h-full w-full flex flex-col items-center justify-center text-gray-700 gap-4">
+        <div className="h-full min-h-[500px] w-full flex flex-col items-center justify-center text-gray-700 gap-4">
           <Activity className="h-8 w-8 opacity-20" />
           <p className="text-xs">No graph data found in file.</p>
         </div>
