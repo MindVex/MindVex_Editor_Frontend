@@ -82,9 +82,11 @@ function buildFileTree(files: FileMap): FileNode[] {
   const root: FileNode[] = [];
   const folderMap = new Map<string, FileNode>();
 
-  // Sort files by path
+  // Sort files by path and strip /home/project prefix
   const sortedPaths = Object.keys(files)
     .filter((path) => files[path]?.type === 'file')
+    .map((path) => path.replace(/^\/home\/project\/?/, ''))
+    .filter((path) => path.length > 0)
     .sort();
 
   for (const filePath of sortedPaths) {
@@ -153,11 +155,7 @@ function FileTreeNode({
           ) : (
             <ChevronRight className="h-3 w-3 text-gray-500" />
           )}
-          {isExpanded ? (
-            <FolderOpen className="h-3 w-3 text-blue-400" />
-          ) : (
-            <Folder className="h-3 w-3 text-blue-400" />
-          )}
+          {isExpanded ? <FolderOpen className="h-3 w-3 text-blue-400" /> : <Folder className="h-3 w-3 text-blue-400" />}
           <span className="text-gray-300">{node.name}</span>
         </button>
         {isExpanded && node.children && (
@@ -273,7 +271,9 @@ export function EvolutionaryBlame({ filePath }: Props) {
   }, [filePath, repoUrl]);
 
   const handleFileSelect = (path: string) => {
-    setInputPath(path);
+    // Strip /home/project prefix if present
+    const cleanPath = path.replace(/^\/home\/project\/?/, '');
+    setInputPath(cleanPath);
     setOpen(false);
   };
 
@@ -476,15 +476,20 @@ export function EvolutionaryBlame({ filePath }: Props) {
         </div>
 
         <div className="flex gap-2 mb-4">
-          <Popover.Root open={open} onOpenChange={setOpen}>
-            <Popover.Trigger asChild>
-              <button className="flex-1 bg-[#151515] border border-white/10 rounded-lg px-3 py-2 text-sm text-left text-white hover:border-orange-500/50 flex items-center justify-between focus:outline-none focus:border-orange-500/50">
-                <span className={inputPath ? 'text-white' : 'text-gray-500'}>
-                  {inputPath || 'Select a file...'}
-                </span>
-                <ChevronDown className="h-4 w-4 text-gray-500" />
-              </button>
-            </Popover.Trigger>
+          <div className="flex-1 relative">
+            <input
+              type="text"
+              value={inputPath}
+              onChange={(e) => setInputPath(e.target.value)}
+              placeholder="Enter file path or select from dropdown..."
+              className="w-full bg-[#151515] border border-white/10 rounded-lg px-3 py-2 pr-10 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-orange-500/50"
+            />
+            <Popover.Root open={open} onOpenChange={setOpen}>
+              <Popover.Trigger asChild>
+                <button className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-white/5 rounded">
+                  <ChevronDown className="h-4 w-4 text-gray-500" />
+                </button>
+              </Popover.Trigger>
 
             <Popover.Portal>
               <Popover.Content
@@ -508,6 +513,7 @@ export function EvolutionaryBlame({ filePath }: Props) {
               </Popover.Content>
             </Popover.Portal>
           </Popover.Root>
+          </div>
 
           <Button
             onClick={() => inputPath && loadBlame(inputPath)}
