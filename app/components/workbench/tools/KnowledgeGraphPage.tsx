@@ -462,13 +462,14 @@ export function KnowledgeGraphPage({ onBack }: Props) {
             label: file.filePath.split('/').pop() || 'unknown',
             filePath: file.filePath,
             language: file.language,
-            complexity: file.metadata.complexity,
-            linesOfCode: file.metadata.linesOfCode,
+            complexity: file.metadata?.complexity || 1,
+            linesOfCode: file.metadata?.linesOfCode || 1,
+            type: 'module'
           },
         }));
 
         projectAnalysis.files.forEach((file) => {
-          file.metadata.imports.forEach((imp) => {
+          file.metadata?.imports?.forEach((imp) => {
             const target = projectAnalysis.files.find((f) => {
               // Normalize file paths for comparison
               const normalizedFilePath = f.filePath.replace(/\\/g, '/');
