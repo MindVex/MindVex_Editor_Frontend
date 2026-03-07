@@ -82,6 +82,7 @@ export function KnowledgeGraphPage({ onBack }: Props) {
   const [showCycles, setShowCycles] = useState(false);
   const [graphStats, setGraphStats] = useState<any>(null);
   const [showStats, setShowStats] = useState(false);
+  const [activeViewTab, setActiveViewTab] = useState<'local' | 'ai'>('local');
 
   // Load initial graph data into originalASTGraph when it first arrives
   useEffect(() => {
@@ -704,6 +705,7 @@ export function KnowledgeGraphPage({ onBack }: Props) {
       };
 
       setAnalysisResult(result);
+      setActiveViewTab('ai'); // Auto-switch to AI view when analysis finishes
       toast.success('Enhanced analysis completed');
     } catch (error) {
       console.error('Analysis failed:', error);
@@ -1004,293 +1006,200 @@ export function KnowledgeGraphPage({ onBack }: Props) {
         </Card>
       )}
 
-      {/* Analysis Summary */}
+      {/* Analysis Summary & Tab Toggle */}
       {analysisResult && (
-        <Card className="mb-4 p-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <div className="text-sm text-gray-400">Total Files</div>
-              <div className="text-xl font-bold">{analysisResult.metadata.totalFiles}</div>
-            </div>
-            <div>
-              <div className="text-sm text-gray-400">Languages</div>
-              <div className="text-sm">
-                {Object.entries(analysisResult.metadata.languages).map(([lang, count]) => (
-                  <Badge key={lang} variant="outline" className="mr-1 mb-1">
-                    {lang}: {count}
-                  </Badge>
-                ))}
+        <Card className="mb-4 p-4 border-emerald-500/20 bg-emerald-500/[0.02]">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-emerald-500/10 rounded-lg">
+                <Brain className="h-5 w-5 text-emerald-400" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white">Analysis Overview</h3>
+                <div className="flex items-center gap-4 mt-1">
+                  <span className="text-[10px] text-gray-400">Files: {analysisResult.metadata.totalFiles}</span>
+                  <span className="text-[10px] text-gray-400">Complexity: {analysisResult.metadata.complexity.toFixed(1)}</span>
+                  <span className="text-[10px] text-gray-400">Time: {analysisResult.analysisTime}ms</span>
+                </div>
               </div>
             </div>
-            <div>
-              <div className="text-sm text-gray-400">Avg Complexity</div>
-              <div className="text-xl font-bold">{analysisResult.metadata.complexity.toFixed(1)}</div>
-            </div>
-            <div>
-              <div className="text-sm text-gray-400">Analysis Time</div>
-              <div className="text-xl font-bold">{analysisResult.analysisTime}ms</div>
+
+            <div className="flex items-center gap-3">
+              <div className="flex bg-gray-950/50 rounded-lg p-1 border border-white/5">
+                <button
+                  onClick={() => setActiveViewTab('local')}
+                  className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-2 ${activeViewTab === 'local' ? 'bg-gray-800 text-white' : 'text-gray-500 hover:text-gray-300'}`}
+                >
+                  <Zap className="w-3 h-3" /> Local Graph
+                </button>
+                <button
+                  onClick={() => setActiveViewTab('ai')}
+                  className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-2 ${activeViewTab === 'ai' ? 'bg-emerald-600 text-white shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'text-gray-500 hover:text-emerald-400/70'}`}
+                >
+                  <Brain className="w-3 h-3" /> AI Enhanced
+                </button>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowLLMDetails(!showLLMDetails)}
+                className="text-gray-400 hover:text-white"
+              >
+                {showLLMDetails ? 'Hide Logic' : 'Show Logic'}
+              </Button>
             </div>
           </div>
 
-          {analysisResult.llmAnalysis && (
-            <div className="mt-4 pt-4 border-t">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="text-sm font-medium flex items-center gap-2">
-                  <Brain className="h-4 w-4" />
-                  AI Analysis
-                </h4>
-                <Button variant="ghost" size="sm" onClick={() => setShowLLMDetails(!showLLMDetails)}>
-                  {showLLMDetails ? 'Hide' : 'Show'} Details
-                </Button>
-              </div>
-
-              {showLLMDetails && (
-                <div className="space-y-3 text-sm">
-                  <div>
-                    <strong>Summary:</strong> {analysisResult.llmAnalysis.summary}
-                  </div>
-                  <div>
-                    <strong>Architecture:</strong> {analysisResult.llmAnalysis.architecture.type}
-                  </div>
-                  {analysisResult.llmAnalysis.patterns.length > 0 && (
-                    <div>
-                      <strong>Patterns:</strong>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {analysisResult.llmAnalysis.patterns.map((pattern, idx) => (
-                          <Badge key={idx} variant="outline" size="sm">
-                            {pattern.name}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {analysisResult.llmAnalysis.recommendations.length > 0 && (
-                    <div>
-                      <strong>Recommendations:</strong>
-                      <ul className="list-disc list-inside mt-1 space-y-1">
-                        {analysisResult.llmAnalysis.recommendations.map((rec, idx) => (
-                          <li key={idx}>{rec}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  <div className="grid grid-cols-3 gap-4 pt-2 border-t">
-                    <div>
-                      <div className="text-xs text-gray-400">Complexity Score</div>
-                      <div className="text-lg font-bold">{analysisResult.llmAnalysis.complexity.score.toFixed(1)}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-400">Quality Score</div>
-                      <div className="text-lg font-bold">{analysisResult.llmAnalysis.quality.score.toFixed(1)}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-400">Issues</div>
-                      <div className="text-lg font-bold">{analysisResult.llmAnalysis.quality.issues.length}</div>
-                    </div>
+          {showLLMDetails && analysisResult.llmAnalysis && (
+            <div className="mt-4 pt-4 border-t border-white/5 grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-2">
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2">Architectural Summary</h4>
+                  <p className="text-sm text-gray-300 leading-relaxed italic border-l-2 border-emerald-500/30 pl-3">
+                    "{analysisResult.llmAnalysis.summary}"
+                  </p>
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2">Design Patterns</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {analysisResult.llmAnalysis.patterns.map((p, i) => (
+                      <Badge key={i} variant="outline" className="bg-emerald-500/5 border-emerald-500/20 text-emerald-300">
+                        {p.name}
+                      </Badge>
+                    ))}
                   </div>
                 </div>
-              )}
+              </div>
+              <div className="space-y-4">
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="p-3 bg-gray-900/50 rounded-lg border border-white/5">
+                    <div className="text-[10px] text-gray-400 mb-1 uppercase">Complexity</div>
+                    <div className="text-lg font-bold text-white">{analysisResult.llmAnalysis.complexity.score.toFixed(1)}</div>
+                  </div>
+                  <div className="p-3 bg-gray-900/50 rounded-lg border border-white/5">
+                    <div className="text-[10px] text-gray-400 mb-1 uppercase">Quality</div>
+                    <div className="text-lg font-bold text-white">{analysisResult.llmAnalysis.quality.score.toFixed(1)}</div>
+                  </div>
+                  <div className="p-3 bg-gray-900/50 rounded-lg border border-white/5">
+                    <div className="text-[10px] text-gray-400 mb-1 uppercase">Issues</div>
+                    <div className="text-lg font-bold text-orange-400">{analysisResult.llmAnalysis.quality.issues.length}</div>
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2">Key Recommendations</h4>
+                  <ul className="space-y-1.5 text-xs text-gray-400">
+                    {analysisResult.llmAnalysis.recommendations.slice(0, 3).map((rec, i) => (
+                      <li key={i} className="flex items-start gap-2">
+                        <span className="text-emerald-500">•</span>
+                        {rec}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
             </div>
           )}
         </Card>
       )}
 
-      {/* Graph Visualization Dual Split System */}
-      <div className={`flex-1 min-h-0 flex ${parseMode.type === 'llm-enhanced' && analysisResult ? 'gap-4 overflow-x-auto min-w-0' : 'min-w-0'}`}>
-
-        {/* Graph 1 (Local AST Structure - Always Displays) */}
-        <div className="flex-1 min-w-[500px] border border-gray-700 rounded-xl bg-gray-950 overflow-hidden relative group">
-          <div className="absolute top-4 left-4 z-10 bg-gray-900/80 p-3 rounded-lg border border-gray-700 backdrop-blur opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-            {parseMode.type === 'llm-enhanced' && analysisResult && (
-              <div className="text-xs font-bold text-gray-300 mb-1">Local AST (SCIP Graph)</div>
+      {/* Main Graph Viewport */}
+      <div className="flex-1 min-h-0 border border-gray-700 rounded-xl bg-gray-950 overflow-hidden relative group">
+        {/* View Transition Indicator */}
+        <div className="absolute top-4 left-4 z-10 bg-gray-900/90 p-3 rounded-lg border border-gray-700 backdrop-blur shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+          <div className="text-xs font-bold text-white mb-2 flex items-center gap-2">
+            {activeViewTab === 'ai' ? (
+              <><Brain className="w-3 h-3 text-emerald-400" /> AI Perspectives</>
+            ) : (
+              <><Zap className="w-3 h-3 text-blue-400" /> Local Structural Graph</>
             )}
-            <div className="text-xs text-gray-400">
-              Nodes: {forceGraphData.nodes.length} | Edges: {forceGraphData.links.length}
-            </div>
-            <div className="text-xs text-gray-500 mt-1">
-              {parseMode.type === 'llm-enhanced' && analysisResult ? 'Deterministic Logic Base' : `Mode: AST Parser`}
-            </div>
           </div>
-
-          <div className="w-full h-full min-h-[600px]">
-            <ClientOnly>
-              {() =>
-                viewMode === '3d' ? (
-                  <ForceGraph3D
-                    ref={graphRef}
-                    graphData={forceGraphData}
-                    nodeLabel="name"
-                    nodeColor="color"
-                    nodeThreeObject={(node: any) => {
-                      const sprite = new SpriteText(node.name);
-                      sprite.color = '#ffffff';
-                      sprite.backgroundColor = node.color;
-                      sprite.padding = 4;
-                      sprite.borderRadius = 12;
-                      sprite.borderWidth = 0.5;
-                      sprite.borderColor = 'rgba(255,255,255,0.5)';
-                      sprite.textHeight = 1.8;
-                      return sprite;
-                    }}
-                    nodeThreeObjectExtend={false}
-                    linkWidth={1.5}
-                    linkDirectionalArrowLength={3.5}
-                    linkDirectionalArrowRelPos={1}
-                    linkCurvature={0.25}
-                    backgroundColor="#020617"
-                    linkColor={() => '#475569'}
-                    linkLabel="label"
-                  />
-                ) : (
-                  <ForceGraph2D
-                    ref={graphRef}
-                    graphData={forceGraphData}
-                    nodeLabel="name"
-                    nodeColor="color"
-                    nodeCanvasObject={(node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
-                      const label = node.name;
-                      const fontSize = 12 / globalScale;
-                      ctx.font = `${fontSize}px Sans-Serif`;
-
-                      const textWidth = ctx.measureText(label).width;
-                      const bckgDimensions = [textWidth, fontSize].map((n) => n + fontSize * 0.2);
-
-                      ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-                      ctx.fillRect(
-                        node.x - bckgDimensions[0] / 2,
-                        node.y - bckgDimensions[1] / 2,
-                        bckgDimensions[0],
-                        bckgDimensions[1],
-                      );
-
-                      ctx.textAlign = 'center';
-                      ctx.textBaseline = 'middle';
-                      ctx.fillStyle = node.color;
-                      ctx.fillText(label, node.x, node.y);
-
-                      node.__bckgDimensions = bckgDimensions;
-                    }}
-                    nodePointerAreaPaint={(node: any, color: string, ctx: CanvasRenderingContext2D) => {
-                      ctx.fillStyle = color;
-
-                      const bckgDimensions = node.__bckgDimensions;
-                      bckgDimensions &&
-                        ctx.fillRect(
-                          node.x - bckgDimensions[0] / 2,
-                          node.y - bckgDimensions[1] / 2,
-                          bckgDimensions[0],
-                          bckgDimensions[1],
-                        );
-                    }}
-                    linkWidth={(link: any) => (link.strength || 1) * 0.5}
-                    linkDirectionalParticles={2}
-                    linkDirectionalParticleSpeed={0.005}
-                    linkDirectionalArrowLength={3}
-                    linkDirectionalArrowRelPos={1}
-                    linkCurvature={0.25}
-                    backgroundColor="#020617"
-                    linkColor={() => '#334155'}
-                    linkLabel="label"
-                  />
-                )
-              }
-            </ClientOnly>
+          <div className="text-[10px] text-gray-400">
+            {activeViewTab === 'ai'
+              ? `${aiForceGraphData.nodes.length} Nodes | ${aiForceGraphData.links.length} Relations`
+              : `${forceGraphData.nodes.length} Nodes | ${forceGraphData.links.length} Relations`}
           </div>
         </div>
 
-        {/* Graph 2 (AI Enhanced Context View) */}
-        {parseMode.type === 'llm-enhanced' && analysisResult && (
-          <div className="flex-1 min-w-[500px] border border-emerald-500/30 rounded-xl bg-[#020617] overflow-hidden relative group shadow-[0_0_20px_rgba(16,185,129,0.05)]">
-            <div className="absolute top-4 left-4 z-10 bg-emerald-950/80 p-3 rounded-lg border border-emerald-800/50 backdrop-blur opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-              <div className="text-xs font-bold text-emerald-400 mb-1">AI Enhancements Overlay</div>
-              <div className="text-xs text-emerald-200/70">
-                Nodes: {aiForceGraphData.nodes.length} | Edges: {aiForceGraphData.links.length}
-              </div>
-              <div className="text-xs text-emerald-500 mt-1">
-                Model: {parseMode.model || 'Auto'}
-              </div>
-            </div>
+        <div className="w-full h-full">
+          <ClientOnly>
+            {() =>
+              viewMode === '3d' ? (
+                <ForceGraph3D
+                  ref={graphRef}
+                  graphData={activeViewTab === 'ai' ? aiForceGraphData : forceGraphData}
+                  nodeLabel="name"
+                  nodeColor="color"
+                  nodeThreeObject={(node: any) => {
+                    const sprite = new SpriteText(node.name);
+                    sprite.color = '#ffffff';
+                    sprite.backgroundColor = node.color;
+                    sprite.padding = 4;
+                    sprite.borderRadius = 12;
+                    sprite.borderWidth = 0.5;
+                    sprite.borderColor = 'rgba(255,255,255,0.5)';
+                    sprite.textHeight = 1.8;
+                    return sprite;
+                  }}
+                  nodeThreeObjectExtend={false}
+                  linkWidth={1.5}
+                  linkDirectionalArrowLength={3.5}
+                  linkDirectionalArrowRelPos={1}
+                  linkCurvature={0.25}
+                  backgroundColor="#020617"
+                  linkColor={() => (activeViewTab === 'ai' ? '#10b981' : '#475569')}
+                  linkLabel="label"
+                />
+              ) : (
+                <ForceGraph2D
+                  ref={graphRef}
+                  graphData={activeViewTab === 'ai' ? aiForceGraphData : forceGraphData}
+                  nodeLabel="name"
+                  nodeColor="color"
+                  nodeCanvasObject={(node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
+                    const label = node.name;
+                    const fontSize = 12 / globalScale;
+                    ctx.font = `${fontSize}px Sans-Serif`;
+                    const textWidth = ctx.measureText(label).width;
+                    const bckgDimensions = [textWidth, fontSize].map((n) => n + fontSize * 0.2);
 
-            <div className="w-full h-full min-h-[600px]">
-              <ClientOnly>
-                {() =>
-                  viewMode === '3d' ? (
-                    <ForceGraph3D
-                      graphData={aiForceGraphData}
-                      nodeLabel="name"
-                      nodeColor="color"
-                      nodeThreeObject={(node: any) => {
-                        const sprite = new SpriteText(node.name);
-                        sprite.color = '#ffffff';
-                        sprite.backgroundColor = node.color;
-                        sprite.padding = 4;
-                        sprite.borderRadius = 12;
-                        sprite.borderWidth = 0.5;
-                        sprite.borderColor = 'rgba(255,255,255,0.5)';
-                        sprite.textHeight = 1.8;
-                        return sprite;
-                      }}
-                      nodeThreeObjectExtend={false}
-                      linkWidth={1.5}
-                      linkDirectionalArrowLength={3.5}
-                      linkDirectionalArrowRelPos={1}
-                      linkCurvature={0.25}
-                      backgroundColor="#020617"
-                      linkColor={() => '#10b981'}
-                      linkLabel="label"
-                    />
-                  ) : (
-                    <ForceGraph2D
-                      graphData={aiForceGraphData}
-                      nodeLabel="name"
-                      nodeColor="color"
-                      nodeCanvasObject={(node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
-                        const label = node.name;
-                        const fontSize = 12 / globalScale;
-                        ctx.font = `${fontSize}px Sans-Serif`;
-                        const textWidth = ctx.measureText(label).width;
-                        const bckgDimensions = [textWidth, fontSize].map((n) => n + fontSize * 0.2);
+                    ctx.fillStyle = 'rgba(0, 5, 20, 0.95)';
+                    ctx.fillRect(
+                      node.x - bckgDimensions[0] / 2,
+                      node.y - bckgDimensions[1] / 2,
+                      bckgDimensions[0],
+                      bckgDimensions[1],
+                    );
 
-                        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-                        ctx.fillRect(
-                          node.x - bckgDimensions[0] / 2,
-                          node.y - bckgDimensions[1] / 2,
-                          bckgDimensions[0],
-                          bckgDimensions[1],
-                        );
-                        ctx.textAlign = 'center';
-                        ctx.textBaseline = 'middle';
-                        ctx.fillStyle = node.color;
-                        ctx.fillText(label, node.x, node.y);
-                        node.__bckgDimensions = bckgDimensions;
-                      }}
-                      nodePointerAreaPaint={(node: any, color: string, ctx: CanvasRenderingContext2D) => {
-                        ctx.fillStyle = color;
-                        const bckgDimensions = node.__bckgDimensions;
-                        bckgDimensions &&
-                          ctx.fillRect(
-                            node.x - bckgDimensions[0] / 2,
-                            node.y - bckgDimensions[1] / 2,
-                            bckgDimensions[0],
-                            bckgDimensions[1],
-                          );
-                      }}
-                      linkWidth={(link: any) => (link.strength || 1) * 0.5}
-                      linkDirectionalParticles={2}
-                      linkDirectionalParticleSpeed={0.005}
-                      linkDirectionalArrowLength={3}
-                      linkDirectionalArrowRelPos={1}
-                      linkCurvature={0.25}
-                      backgroundColor="#020617"
-                      linkColor={() => '#10b981'}
-                      linkLabel="label"
-                    />
-                  )
-                }
-              </ClientOnly>
-            </div>
-          </div>
-        )}
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillStyle = node.color;
+                    ctx.fillText(label, node.x, node.y);
+                    node.__bckgDimensions = bckgDimensions;
+                  }}
+                  nodePointerAreaPaint={(node: any, color: string, ctx: CanvasRenderingContext2D) => {
+                    ctx.fillStyle = color;
+                    const bckgDimensions = node.__bckgDimensions;
+                    bckgDimensions && ctx.fillRect(
+                      node.x - bckgDimensions[0] / 2,
+                      node.y - bckgDimensions[1] / 2,
+                      bckgDimensions[0],
+                      bckgDimensions[1],
+                    );
+                  }}
+                  linkWidth={(link: any) => (link.strength || 1) * 0.5}
+                  linkDirectionalParticles={2}
+                  linkDirectionalParticleSpeed={0.005}
+                  linkDirectionalArrowLength={3}
+                  linkDirectionalArrowRelPos={1}
+                  linkCurvature={0.25}
+                  backgroundColor="#020617"
+                  linkColor={() => (activeViewTab === 'ai' ? '#10b981' : '#334155')}
+                  linkLabel="label"
+                />
+              )
+            }
+          </ClientOnly>
+        </div>
       </div>
     </div>
   );
