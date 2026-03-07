@@ -456,9 +456,6 @@ export function AnalyticsDashboard() {
           </div>
           <div className="text-3xl font-bold text-blue-400 mb-1">{hotspots.reduce((s, h) => s + h.totalCommits, 0)}</div>
           <div className="text-[10px] text-gray-500">Across all hotspot files</div>
-          </div>
-          <div className="text-3xl font-bold text-blue-400 mb-1">{hotspots.reduce((s, h) => s + h.totalCommits, 0)}</div>
-          <div className="text-[10px] text-gray-500">Across all hotspot files</div>
         </Card>
       </div>
 
