@@ -82,6 +82,7 @@ export function KnowledgeGraphPage({ onBack }: Props) {
   const [showCycles, setShowCycles] = useState(false);
   const [graphStats, setGraphStats] = useState<any>(null);
   const [showStats, setShowStats] = useState(false);
+  const [activeViewTab, setActiveViewTab] = useState<'local' | 'ai'>('local');
 
   // Load initial graph data into originalASTGraph when it first arrives
   useEffect(() => {
@@ -333,6 +334,52 @@ export function KnowledgeGraphPage({ onBack }: Props) {
     };
   }, [graphData, symbolGraphData, granularity, semanticResults, complexityFilter, showCycles]);
 
+  // Format data specifically for isolated AI view overlay
+  const aiForceGraphData = useMemo(() => {
+    if (!analysisResult) return { nodes: [], links: [] };
+    const data = { nodes: analysisResult.nodes, edges: analysisResult.edges };
+
+    const nodeMap = new Map();
+    data.nodes.forEach((n: any) => {
+      const id = n.data.id.trim();
+      let color = getLanguageColor(n.data.language);
+      let val = ((n.data as any).complexity || 1) + 8;
+      if (n.data.type === 'class') { color = '#F472B6'; val = 6; } else if (n.data.type === 'function') { color = '#60A5FA'; val = 4; }
+      nodeMap.set(id, { id, name: n.data.label, val, color, language: n.data.language, filePath: n.data.filePath, type: n.data.type || 'file' });
+    });
+
+    const links = data.edges.map((e: any) => {
+      let source = typeof e.data.source === 'string' ? e.data.source : (e.data.source as any).id;
+      let target = typeof e.data.target === 'string' ? e.data.target : (e.data.target as any).id;
+      return { source: source.trim(), target: target.trim(), label: (e.data as any).label || 'depends', strength: (e.data as any).strength || 1, type: (e.data as any).type };
+    }).filter((l: any) => nodeMap.has(l.source) && nodeMap.has(l.target));
+
+    let filteredNodes = Array.from(nodeMap.values());
+    let filteredLinks = links;
+
+    if (semanticResults.length > 0) {
+      const semanticSet = new Set(semanticResults);
+      filteredNodes = filteredNodes.filter((n) => semanticSet.has(n.id));
+      filteredLinks = filteredLinks.filter((l: any) => semanticSet.has(l.source) && semanticSet.has(l.target));
+    }
+
+    if (complexityFilter > 0) {
+      const complexSet = new Set(filteredNodes.filter((n) => ((n as any).val || 0) >= complexityFilter).map((n) => n.id));
+      filteredNodes = filteredNodes.filter((n) => complexSet.has(n.id));
+      filteredLinks = filteredLinks.filter((l: any) => complexSet.has(l.source) && complexSet.has(l.target));
+    }
+
+    if (showCycles) {
+      const cycleEdges = data.edges?.filter((e: any) => e.data.cycle) || [];
+      filteredLinks = filteredLinks.map((l: any) => {
+        const isCycle = cycleEdges.some((e: any) => e.data.source === l.source && e.data.target === l.target);
+        return { ...l, color: isCycle ? '#ef4444' : undefined, width: isCycle ? 2 : 1 };
+      });
+    }
+
+    return { nodes: filteredNodes, links: filteredLinks };
+  }, [analysisResult, semanticResults, complexityFilter, showCycles]);
+
   function getLanguageColor(lang: string = ''): string {
     const safeLang = lang || '';
     const colors: Record<string, string> = {
@@ -367,9 +414,12 @@ export function KnowledgeGraphPage({ onBack }: Props) {
       // Zoom to fit after data changes
       setTimeout(() => {
         if (viewMode === '2d' && graphRef.current?.zoomToFit) {
-          graphRef.current.zoomToFit(400, 100);
+          graphRef.current.zoomToFit(600, 100);
+        } else if (viewMode === '3d' && graphRef.current?.cameraPosition) {
+          // Robust 3D auto-centering for the entire graph cluster
+          graphRef.current.zoomToFit(800, 150);
         }
-      }, 500);
+      }, 800);
     }
   }, [forceGraphData, viewMode]);
 
@@ -427,25 +477,42 @@ export function KnowledgeGraphPage({ onBack }: Props) {
 
       // ─── Build graph from AI analysis ──────────────────────────────────────────
 
-      let newNodes: any[] = [];
+      // 1. Ensure we NEVER drop original node IDs or graph structure by defaulting nodes to the working SCIP payload
+      let newNodes: any[] = JSON.parse(JSON.stringify(graphData.nodes));
       let newEdges: any[] = [];
 
-      if (projectAnalysis.llmAnalysis?.graph && projectAnalysis.llmAnalysis.graph.edges.length > 0) {
-        // Use AI-generated graph data
-        newNodes = projectAnalysis.llmAnalysis.graph.nodes.map((node) => ({
-          data: {
-            id: node.id,
-            label: node.label,
-            filePath: node.id,
-            language: node.id.split('.').pop() || 'unknown',
-          },
-        }));
+      const filePathToNodeId = new Map<string, string>();
 
+      // Decorate our surviving SCIP nodes with analytical metrics from AST & Map their IDs
+      newNodes = newNodes.map((node: any) => {
+        const language = node.data.language || 'javascript';
+        const fileName = node.data.label || 'unknown';
+        const filePath = node.data.filePath || `${fileName}.${language}`;
+
+        filePathToNodeId.set(filePath, node.data.id || node.id);
+        // Sometimes AI hallucinates just the filename
+        filePathToNodeId.set(fileName, node.data.id || node.id);
+
+        const analysisFile = projectAnalysis?.files?.find((f) => f.filePath === filePath);
+
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            complexity: analysisFile?.metadata?.complexity || node.data.complexity || 1,
+            linesOfCode: analysisFile?.metadata?.linesOfCode || node.data.linesOfCode || 1,
+            type: node.data.type || 'module'
+          }
+        };
+      });
+
+      if (projectAnalysis.llmAnalysis?.graph && projectAnalysis.llmAnalysis.graph.edges.length > 0) {
+        // Use AI-generated graph data map edges onto our strict original Node IDs
         newEdges = projectAnalysis.llmAnalysis.graph.edges.map((edge, idx) => ({
           data: {
             id: `ai-edge-${idx}`,
-            source: edge.source,
-            target: edge.target,
+            source: filePathToNodeId.get(edge.source) || edge.source,
+            target: filePathToNodeId.get(edge.target) || edge.target,
             label: edge.type,
             strength: edge.strength || 1,
           },
@@ -456,19 +523,8 @@ export function KnowledgeGraphPage({ onBack }: Props) {
         // Fallback to basic AST-based graph if AI didn't provide graph data OR returned no edges
         console.log('AI returned no edges, falling back to AST-based graph construction');
 
-        newNodes = projectAnalysis.files.map((file) => ({
-          data: {
-            id: file.filePath,
-            label: file.filePath.split('/').pop() || 'unknown',
-            filePath: file.filePath,
-            language: file.language,
-            complexity: file.metadata.complexity,
-            linesOfCode: file.metadata.linesOfCode,
-          },
-        }));
-
         projectAnalysis.files.forEach((file) => {
-          file.metadata.imports.forEach((imp) => {
+          file.metadata?.imports?.forEach((imp) => {
             const target = projectAnalysis.files.find((f) => {
               // Normalize file paths for comparison
               const normalizedFilePath = f.filePath.replace(/\\/g, '/');
@@ -482,11 +538,14 @@ export function KnowledgeGraphPage({ onBack }: Props) {
             });
 
             if (target) {
+              const mappedSource = filePathToNodeId.get(file.filePath) || file.filePath;
+              const mappedTarget = filePathToNodeId.get(target.filePath) || target.filePath;
+
               newEdges.push({
                 data: {
-                  id: `${file.filePath}-${target.filePath}`,
-                  source: file.filePath,
-                  target: target.filePath,
+                  id: `${mappedSource}-${mappedTarget}`,
+                  source: mappedSource,
+                  target: mappedTarget,
                   type: 'import',
                   label: imp.symbols.join(', ') || 'imports',
                 },
@@ -530,18 +589,21 @@ export function KnowledgeGraphPage({ onBack }: Props) {
                 const usageRegex = new RegExp(`\\b${siblingName}\\b`);
 
                 if (usageRegex.test(fileContent)) {
+                  const mappedSource = filePathToNodeId.get(file.filePath) || file.filePath;
+                  const mappedTarget = filePathToNodeId.get(sibling.filePath) || sibling.filePath;
+
                   // Avoid duplicates
-                  const edgeId = `${file.filePath}-${sibling.filePath}`;
+                  const edgeId = `${mappedSource}-${mappedTarget}`;
 
                   if (!newEdges.some((e) => e.data.id === edgeId)) {
                     console.log(
-                      `Adding implicit package edge: ${file.filePath} -> ${sibling.filePath} (${siblingName})`,
+                      `Adding implicit package edge: ${mappedSource} -> ${mappedTarget} (${siblingName})`,
                     );
                     newEdges.push({
                       data: {
                         id: edgeId,
-                        source: file.filePath,
-                        target: sibling.filePath,
+                        source: mappedSource,
+                        target: mappedTarget,
                         type: 'package_reference',
                         label: 'uses',
                         strength: 2,
@@ -570,14 +632,17 @@ export function KnowledgeGraphPage({ onBack }: Props) {
               const moduleName = sibling.filePath.split('/').pop()?.replace('.py', '');
 
               if (moduleName && fileContent.includes(moduleName)) {
-                const edgeId = `${file.filePath}-${sibling.filePath}`;
+                const mappedSource = filePathToNodeId.get(file.filePath) || file.filePath;
+                const mappedTarget = filePathToNodeId.get(sibling.filePath) || sibling.filePath;
+
+                const edgeId = `${mappedSource}-${mappedTarget}`;
 
                 if (!newEdges.some((e) => e.data.id === edgeId)) {
                   newEdges.push({
                     data: {
                       id: edgeId,
-                      source: file.filePath,
-                      target: sibling.filePath,
+                      source: mappedSource,
+                      target: mappedTarget,
                       type: 'module_reference',
                       label: 'uses',
                       strength: 1,
@@ -590,13 +655,41 @@ export function KnowledgeGraphPage({ onBack }: Props) {
         });
       }
 
+      // --- CRITICAL MERGE: Preserve original backend SCIP edges ---
+      // If frontend AST couldn't read file bodies, or AI hallucinated and skipped edges,
+      // we merge back the reliable original edges to ensure the knowledge graph is deeply connected.
+      if (graphData && graphData.edges) {
+        const existingEdgeSet = new Set<string>();
+        newEdges.forEach((e) => {
+          const s = typeof e.data.source === 'string' ? e.data.source : e.data.source?.id;
+          const t = typeof e.data.target === 'string' ? e.data.target : e.data.target?.id;
+          existingEdgeSet.add(`${s}-to-${t}`);
+        });
+
+        graphData.edges.forEach((origEdge: any) => {
+          const s = typeof origEdge.data.source === 'string' ? origEdge.data.source : origEdge.data.source?.id;
+          const t = typeof origEdge.data.target === 'string' ? origEdge.data.target : origEdge.data.target?.id;
+          const key = `${s}-to-${t}`;
+
+          if (!existingEdgeSet.has(key)) {
+            newEdges.push(origEdge);
+            existingEdgeSet.add(key);
+          }
+        });
+
+        console.log(`Merged backend graph metrics. Final Nodes: ${newNodes.length}, Final Edges: ${newEdges.length}`);
+      }
+
       // Update the graph cache with the new, AI-verified data
-      graphCache.set({
-        nodes: newNodes,
-        edges: newEdges,
-        cycles: [],
-        isFallback: false,
-      });
+      // Only overwrite the master layout if we aren't splitting the screen via AI overlay
+      if (parseMode.type !== 'llm-enhanced') {
+        graphCache.set({
+          nodes: newNodes,
+          edges: newEdges,
+          cycles: [],
+          isFallback: false,
+        });
+      }
 
       const result: AnalysisResult = {
         nodes: newNodes,
@@ -612,6 +705,7 @@ export function KnowledgeGraphPage({ onBack }: Props) {
       };
 
       setAnalysisResult(result);
+      setActiveViewTab('ai'); // Auto-switch to AI view when analysis finishes
       toast.success('Enhanced analysis completed');
     } catch (error) {
       console.error('Analysis failed:', error);
@@ -912,148 +1006,163 @@ export function KnowledgeGraphPage({ onBack }: Props) {
         </Card>
       )}
 
-      {/* Analysis Summary */}
+      {/* Analysis Summary & Tab Toggle */}
       {analysisResult && (
-        <Card className="mb-4 p-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <div className="text-sm text-gray-400">Total Files</div>
-              <div className="text-xl font-bold">{analysisResult.metadata.totalFiles}</div>
-            </div>
-            <div>
-              <div className="text-sm text-gray-400">Languages</div>
-              <div className="text-sm">
-                {Object.entries(analysisResult.metadata.languages).map(([lang, count]) => (
-                  <Badge key={lang} variant="outline" className="mr-1 mb-1">
-                    {lang}: {count}
-                  </Badge>
-                ))}
+        <Card className="mb-4 p-4 border-emerald-500/20 bg-emerald-500/[0.02]">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-emerald-500/10 rounded-lg">
+                <Brain className="h-5 w-5 text-emerald-400" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white">Analysis Overview</h3>
+                <div className="flex items-center gap-4 mt-1">
+                  <span className="text-[10px] text-gray-400">Files: {analysisResult.metadata.totalFiles}</span>
+                  <span className="text-[10px] text-gray-400">Complexity: {analysisResult.metadata.complexity.toFixed(1)}</span>
+                  <span className="text-[10px] text-gray-400">Time: {analysisResult.analysisTime}ms</span>
+                </div>
               </div>
             </div>
-            <div>
-              <div className="text-sm text-gray-400">Avg Complexity</div>
-              <div className="text-xl font-bold">{analysisResult.metadata.complexity.toFixed(1)}</div>
-            </div>
-            <div>
-              <div className="text-sm text-gray-400">Analysis Time</div>
-              <div className="text-xl font-bold">{analysisResult.analysisTime}ms</div>
+
+            <div className="flex items-center gap-3">
+              <div className="flex bg-gray-950/50 rounded-lg p-1 border border-white/5">
+                <button
+                  onClick={() => setActiveViewTab('local')}
+                  className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-2 ${activeViewTab === 'local' ? 'bg-gray-800 text-white' : 'text-gray-500 hover:text-gray-300'}`}
+                >
+                  <Zap className="w-3 h-3" /> Local Graph
+                </button>
+                <button
+                  onClick={() => setActiveViewTab('ai')}
+                  className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-2 ${activeViewTab === 'ai' ? 'bg-emerald-600 text-white shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'text-gray-500 hover:text-emerald-400/70'}`}
+                >
+                  <Brain className="w-3 h-3" /> AI Enhanced
+                </button>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowLLMDetails(!showLLMDetails)}
+                className="text-gray-400 hover:text-white"
+              >
+                {showLLMDetails ? 'Hide Logic' : 'Show Logic'}
+              </Button>
             </div>
           </div>
 
-          {analysisResult.llmAnalysis && (
-            <div className="mt-4 pt-4 border-t">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="text-sm font-medium flex items-center gap-2">
-                  <Brain className="h-4 w-4" />
-                  AI Analysis
-                </h4>
-                <Button variant="ghost" size="sm" onClick={() => setShowLLMDetails(!showLLMDetails)}>
-                  {showLLMDetails ? 'Hide' : 'Show'} Details
-                </Button>
-              </div>
-
-              {showLLMDetails && (
-                <div className="space-y-3 text-sm">
-                  <div>
-                    <strong>Summary:</strong> {analysisResult.llmAnalysis.summary}
-                  </div>
-                  <div>
-                    <strong>Architecture:</strong> {analysisResult.llmAnalysis.architecture.type}
-                  </div>
-                  {analysisResult.llmAnalysis.patterns.length > 0 && (
-                    <div>
-                      <strong>Patterns:</strong>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {analysisResult.llmAnalysis.patterns.map((pattern, idx) => (
-                          <Badge key={idx} variant="outline" size="sm">
-                            {pattern.name}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {analysisResult.llmAnalysis.recommendations.length > 0 && (
-                    <div>
-                      <strong>Recommendations:</strong>
-                      <ul className="list-disc list-inside mt-1 space-y-1">
-                        {analysisResult.llmAnalysis.recommendations.map((rec, idx) => (
-                          <li key={idx}>{rec}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  <div className="grid grid-cols-3 gap-4 pt-2 border-t">
-                    <div>
-                      <div className="text-xs text-gray-400">Complexity Score</div>
-                      <div className="text-lg font-bold">{analysisResult.llmAnalysis.complexity.score.toFixed(1)}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-400">Quality Score</div>
-                      <div className="text-lg font-bold">{analysisResult.llmAnalysis.quality.score.toFixed(1)}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-400">Issues</div>
-                      <div className="text-lg font-bold">{analysisResult.llmAnalysis.quality.issues.length}</div>
-                    </div>
+          {showLLMDetails && analysisResult.llmAnalysis && (
+            <div className="mt-4 pt-4 border-t border-white/5 grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-2">
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2">Architectural Summary</h4>
+                  <p className="text-sm text-gray-300 leading-relaxed italic border-l-2 border-emerald-500/30 pl-3">
+                    "{analysisResult.llmAnalysis.summary}"
+                  </p>
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2">Design Patterns</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {analysisResult.llmAnalysis.patterns.map((p, i) => (
+                      <Badge key={i} variant="outline" className="bg-emerald-500/5 border-emerald-500/20 text-emerald-300">
+                        {p.name}
+                      </Badge>
+                    ))}
                   </div>
                 </div>
-              )}
+              </div>
+              <div className="space-y-4">
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="p-3 bg-gray-900/50 rounded-lg border border-white/5">
+                    <div className="text-[10px] text-gray-400 mb-1 uppercase">Complexity</div>
+                    <div className="text-lg font-bold text-white">{analysisResult.llmAnalysis.complexity.score.toFixed(1)}</div>
+                  </div>
+                  <div className="p-3 bg-gray-900/50 rounded-lg border border-white/5">
+                    <div className="text-[10px] text-gray-400 mb-1 uppercase">Quality</div>
+                    <div className="text-lg font-bold text-white">{analysisResult.llmAnalysis.quality.score.toFixed(1)}</div>
+                  </div>
+                  <div className="p-3 bg-gray-900/50 rounded-lg border border-white/5">
+                    <div className="text-[10px] text-gray-400 mb-1 uppercase">Issues</div>
+                    <div className="text-lg font-bold text-orange-400">{analysisResult.llmAnalysis.quality.issues.length}</div>
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2">Key Recommendations</h4>
+                  <ul className="space-y-1.5 text-xs text-gray-400">
+                    {analysisResult.llmAnalysis.recommendations.slice(0, 3).map((rec, i) => (
+                      <li key={i} className="flex items-start gap-2">
+                        <span className="text-emerald-500">•</span>
+                        {rec}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
             </div>
           )}
         </Card>
       )}
 
-      {/* Graph Visualization */}
+      {/* Main Graph Viewport */}
       <div className="flex-1 min-h-0 border border-gray-700 rounded-xl bg-gray-950 overflow-hidden relative group">
-        <div className="absolute top-4 left-4 z-10 bg-gray-900/80 p-3 rounded-lg border border-gray-700 backdrop-blur opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-          <div className="text-xs text-gray-400">
-            Nodes: {forceGraphData.nodes.length} | Edges: {forceGraphData.links.length}
+        {/* View Transition Indicator */}
+        <div className="absolute top-4 left-4 z-10 bg-gray-900/90 p-3 rounded-lg border border-gray-700 backdrop-blur shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+          <div className="text-xs font-bold text-white mb-2 flex items-center gap-2">
+            {activeViewTab === 'ai' ? (
+              <><Brain className="w-3 h-3 text-emerald-400" /> AI Perspectives</>
+            ) : (
+              <><Zap className="w-3 h-3 text-blue-400" /> Local Structural Graph</>
+            )}
           </div>
-          <div className="text-xs text-gray-500 mt-1">
-            Mode: {parseMode.type === 'parser-only' ? 'Parser Only' : 'LLM Enhanced'}
-            {parseMode.model && ` (${parseMode.model})`}
+          <div className="text-[10px] text-gray-400">
+            {activeViewTab === 'ai'
+              ? `${aiForceGraphData.nodes.length} Nodes | ${aiForceGraphData.links.length} Relations`
+              : `${forceGraphData.nodes.length} Nodes | ${forceGraphData.links.length} Relations`}
           </div>
         </div>
 
-        <div className="w-full h-full min-h-[600px]">
+        <div className="w-full h-full">
           <ClientOnly>
             {() =>
               viewMode === '3d' ? (
                 <ForceGraph3D
                   ref={graphRef}
-                  graphData={forceGraphData}
+                  graphData={activeViewTab === 'ai' ? aiForceGraphData : forceGraphData}
                   nodeLabel="name"
                   nodeColor="color"
                   nodeThreeObject={(node: any) => {
                     const sprite = new SpriteText(node.name);
-                    sprite.color = node.color;
-                    sprite.textHeight = 8;
-
+                    sprite.color = '#ffffff';
+                    sprite.backgroundColor = node.color;
+                    sprite.padding = 4;
+                    sprite.borderRadius = 12;
+                    sprite.borderWidth = 0.5;
+                    sprite.borderColor = 'rgba(255,255,255,0.5)';
+                    sprite.textHeight = 1.8;
                     return sprite;
                   }}
-                  nodeThreeObjectExtend={true}
+                  nodeThreeObjectExtend={false}
+                  linkWidth={1.5}
                   linkDirectionalArrowLength={3.5}
                   linkDirectionalArrowRelPos={1}
                   linkCurvature={0.25}
                   backgroundColor="#020617"
-                  linkColor={() => '#475569'}
+                  linkColor={() => (activeViewTab === 'ai' ? '#10b981' : '#475569')}
                   linkLabel="label"
                 />
               ) : (
                 <ForceGraph2D
                   ref={graphRef}
-                  graphData={forceGraphData}
+                  graphData={activeViewTab === 'ai' ? aiForceGraphData : forceGraphData}
                   nodeLabel="name"
                   nodeColor="color"
                   nodeCanvasObject={(node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
                     const label = node.name;
                     const fontSize = 12 / globalScale;
                     ctx.font = `${fontSize}px Sans-Serif`;
-
                     const textWidth = ctx.measureText(label).width;
                     const bckgDimensions = [textWidth, fontSize].map((n) => n + fontSize * 0.2);
 
-                    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                    ctx.fillStyle = 'rgba(0, 5, 20, 0.95)';
                     ctx.fillRect(
                       node.x - bckgDimensions[0] / 2,
                       node.y - bckgDimensions[1] / 2,
@@ -1065,20 +1174,17 @@ export function KnowledgeGraphPage({ onBack }: Props) {
                     ctx.textBaseline = 'middle';
                     ctx.fillStyle = node.color;
                     ctx.fillText(label, node.x, node.y);
-
                     node.__bckgDimensions = bckgDimensions;
                   }}
                   nodePointerAreaPaint={(node: any, color: string, ctx: CanvasRenderingContext2D) => {
                     ctx.fillStyle = color;
-
                     const bckgDimensions = node.__bckgDimensions;
-                    bckgDimensions &&
-                      ctx.fillRect(
-                        node.x - bckgDimensions[0] / 2,
-                        node.y - bckgDimensions[1] / 2,
-                        bckgDimensions[0],
-                        bckgDimensions[1],
-                      );
+                    bckgDimensions && ctx.fillRect(
+                      node.x - bckgDimensions[0] / 2,
+                      node.y - bckgDimensions[1] / 2,
+                      bckgDimensions[0],
+                      bckgDimensions[1],
+                    );
                   }}
                   linkWidth={(link: any) => (link.strength || 1) * 0.5}
                   linkDirectionalParticles={2}
@@ -1087,7 +1193,7 @@ export function KnowledgeGraphPage({ onBack }: Props) {
                   linkDirectionalArrowRelPos={1}
                   linkCurvature={0.25}
                   backgroundColor="#020617"
-                  linkColor={() => '#334155'}
+                  linkColor={() => (activeViewTab === 'ai' ? '#10b981' : '#334155')}
                   linkLabel="label"
                 />
               )
